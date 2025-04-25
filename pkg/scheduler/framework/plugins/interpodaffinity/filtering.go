@@ -385,6 +385,28 @@ func satisfyPodAntiAffinity(state *preFilterState, nodeInfo *framework.NodeInfo)
 func satisfyPodAffinity(state *preFilterState, nodeInfo *framework.NodeInfo) bool {
 	podsExist := true
 	for _, term := range state.podInfo.RequiredAffinityTerms {
+    topologyValue, ok := nodeInfo.Node().Labels[term.TopologyKey]
+    if !ok {
+        return false
+    }
+
+    matched := false
+
+    podsOnNode := nodeInfo.Pods() // Get all pods on this node
+    for _, existingPod := range podsOnNode {
+        if podMatchesTerm(existingPod.Pod, term, state.podInfo.Pod.Namespace) {
+            matched = true
+            break
+        }
+    }
+
+    if !matched {
+        return false
+    }
+}
+return true
+
+	/*for _, term := range state.podInfo.RequiredAffinityTerms {
 		if topologyValue, ok := nodeInfo.Node().Labels[term.TopologyKey]; ok {
 			tp := topologyPair{key: term.TopologyKey, value: topologyValue}
 			if state.affinityCounts[tp] <= 0 {
@@ -395,7 +417,7 @@ func satisfyPodAffinity(state *preFilterState, nodeInfo *framework.NodeInfo) boo
 			return false
 		}
 	}
-
+*/
 	if !podsExist {
 		// This pod may be the first pod in a series that have affinity to themselves. In order
 		// to not leave such pods in pending state forever, we check that if no other pod
