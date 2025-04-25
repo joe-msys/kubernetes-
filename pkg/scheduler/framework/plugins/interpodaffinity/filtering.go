@@ -431,6 +431,29 @@ return true
 	}
 	return true
 }
+//we added the helper func
+func podMatchesTerm(pod *v1.Pod, term *framework.AffinityTerm, namespace string) bool {
+	selector, err := metav1.LabelSelectorAsSelector(term.LabelSelector)
+	if err != nil {
+		return false
+	}
+
+	nsMatches := false
+	if len(term.Namespaces) == 0 {
+		nsMatches = pod.Namespace == namespace
+	} else {
+		for _, ns := range term.Namespaces {
+			if pod.Namespace == ns {
+				nsMatches = true
+				break
+			}
+		}
+	}
+
+	return nsMatches && selector.Matches(labels.Set(pod.Labels))
+}
+// till this 
+
 
 // Filter invoked at the filter extension point.
 // It checks if a pod can be scheduled on the specified node with pod affinity/anti-affinity configuration.
